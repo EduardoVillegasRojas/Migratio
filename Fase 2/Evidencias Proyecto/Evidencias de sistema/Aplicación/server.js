@@ -14,11 +14,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(helmet());
-app.use(cors()); // en prod: limita origins
+app.use(cors()); 
 app.use(express.json({ limit: "256kb" }));
 app.use(morgan("tiny"));
 
-// ====== STATIC (self-hosted) ======
+
 app.use(
   "/vendor",
   express.static(path.join(__dirname, "..", "node_modules", "chart.js", "dist"))
@@ -30,13 +30,13 @@ const {
   DATABASE_URL,
   PGSSL = "true",
   PORT = 8080,
-  API_KEY = "supersecreto", // Bearer para ingestión
-  ADMIN_KEY = "",           // opcional p/ reset
-  CAMERA_SNAPSHOT_URL = "", // ej: http://IP:8080/shot.jpg
-  SNAP_BASIC_USER = "",     // opcional: basic auth simple del snapshot
-  SNAP_BASIC_PASS = "",     // opcional
-  METRICS_WINDOW_MIN = "1000",// minutos de ventana para el gráfico
-  DEFAULT_SOURCE_ID = "",   // opcional: cámara por defecto en el dashboard
+  API_KEY = "supersecreto", 
+  ADMIN_KEY = "",           
+  CAMERA_SNAPSHOT_URL = "", 
+  SNAP_BASIC_USER = "",    
+  SNAP_BASIC_PASS = "",     
+  METRICS_WINDOW_MIN = "1000",
+  DEFAULT_SOURCE_ID = "",   
 } = process.env;
 
 const pool = new Pool({
@@ -44,10 +44,10 @@ const pool = new Pool({
   ssl: PGSSL === "true" ? { rejectUnauthorized: false } : false,
 });
 
-// ====== Zod Schemas ======
+
 const Payload = z.object({
   source_id: z.string().min(1),
-  timestamp: z.string().datetime(), // ISO8601
+  timestamp: z.string().datetime(), 
   count: z.number().int().nonnegative(),
   unique: z.number().int().nonnegative().optional().default(0),
   max: z.number().int().nonnegative().nullable().optional(),
@@ -56,7 +56,7 @@ const Payload = z.object({
   fps: z.number().nullable().optional(),
 });
 
-// ====== Helpers ======
+
 function toEpochSec(isoTs) {
   return Math.floor(new Date(isoTs).getTime() / 1000);
 }
@@ -141,9 +141,7 @@ app.post("/api/metrics", async (req, res) => {
           .json({ error: "camera_not_found", source_id: b.source_id });
       }
 
-      // Columnas esperadas:
-      // ts timestamptz, ts_sec int GENERATED, count int, unique_count int,
-      // max_count int, min_count int, roll_avg float8, fps float8
+
       const q = `
         INSERT INTO metricas
           (camara_id, ts, count, unique_count, max_count, min_count, roll_avg, fps)
@@ -216,7 +214,6 @@ app.get("/metrics", async (req, res) => {
         }
       }
 
-      // Traer últimos N minutos
       const q = `
         SELECT ts, count, unique_count, max_count, min_count, roll_avg, fps
         FROM metricas
@@ -261,11 +258,11 @@ app.get("/metrics", async (req, res) => {
           : cNow;
       const trend30s = Number((avgRecent - avgPrev30).toFixed(2));
 
-      // cuándo ocurrió el máximo
+      
       const maxIdx = counts.indexOf(cMax);
       const max_time = history[maxIdx]?.t || "—";
 
-      // “uptime” ficticio: desde el primer punto del rango
+
       const uptimeSec = Math.max(
         0,
         Math.floor((nowEpoch - withTs[0].epoch) / 1000)
